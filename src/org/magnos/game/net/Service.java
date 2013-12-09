@@ -16,7 +16,7 @@ import org.magnos.reflect.impl.ReflectMethod;
 public class Service<T> implements InvocationHandler
 {
 
-    private static final Iterable<Client> NO_TARGETS = new IterableNone<Client>();
+    public static final Iterable<Client> NO_TARGETS = new IterableNone<Client>();
     
     private class MethodMeta
     {

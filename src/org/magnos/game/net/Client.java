@@ -6,7 +6,6 @@ import java.util.Queue;
 
 public interface Client
 {
-
     public void init() throws IOException;
     public boolean isInitialized();
     public void read() throws IOException;
@@ -38,5 +37,10 @@ public interface Client
     public long getUpdateNanos();
     public long getWriteNanos();
     public long getSendNanos();
+    
+    public int getStates();
+    public void setStates(int states);
+    public void addState(int state);
+    public void removeState(int state);
     
 }
