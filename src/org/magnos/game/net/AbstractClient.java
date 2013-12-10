@@ -44,6 +44,8 @@ public abstract class AbstractClient implements Client
 	protected int packetsRead;
 	protected long pingTime;
 	
+	protected Object attachment;
+	
 	public AbstractClient(Protocol protocol, Server server, String host, int port)
 	{
 		this.protocol = protocol;
@@ -187,6 +189,8 @@ public abstract class AbstractClient implements Client
 		
 		lastReceivedPacketSize = packetSize;
 		lastReceivedPacketTime = packetTime;
+		
+		return true;
 	}
 	
 	private void unflip( ByteBuffer bb )
@@ -490,6 +494,18 @@ public abstract class AbstractClient implements Client
 		return durationSend;
 	}
 
+	@Override
+	public void attach(Object attachment)
+	{
+		this.attachment = attachment;
+	}
+	
+	@Override
+	public <T> T attachment()
+	{
+		return (T) attachment;
+	}
+	
 	@Override
 	public int getStates()
 	{

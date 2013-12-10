@@ -18,4 +18,16 @@ public @interface RemoteMethod
     public int retryCount() default 1;
 
     public int channel() default 0;
+    
+    public int readStates() default -1;
+    
+    public Match readMatch() default Match.ANY_OF;
+    
+    public MismatchAction readMismatch() default MismatchAction.LOG;
+    
+    public int writeStates() default -1;
+    
+    public Match writeMatch() default Match.ANY_OF;
+    
+    public MismatchAction writeMismatch() default MismatchAction.LOG;
 }

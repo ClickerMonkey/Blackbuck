@@ -37,6 +37,9 @@ public interface Client
     public long getUpdateNanos();
     public long getWriteNanos();
     public long getSendNanos();
+
+    public void attach(Object attachment);
+    public <T> T attachment();
     
     public int getStates();
     public void setStates(int states);
