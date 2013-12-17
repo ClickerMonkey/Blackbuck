@@ -1,6 +1,7 @@
 package org.magnos.game.net;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -10,17 +11,18 @@ import org.magnos.reflect.util.Compress;
 
 public abstract class AbstractClient implements Client
 {
-
+    
 	protected final Protocol protocol;
 	protected final Server server;
-	protected final String host;
-	protected final int port;
+	protected final InetSocketAddress address;
 	
 	protected Queue<RemoteMethodCall> outbound;
 	protected Queue<RemoteMethodCall> inbound;
 	
 	protected ByteBuffer buffer;
 	protected Queue<ByteBuffer> bufferOut;
+	
+	protected PacketHeader packet;
 	
 	protected boolean initialized;
 	protected long updateRate;
@@ -46,13 +48,13 @@ public abstract class AbstractClient implements Client
 	
 	protected Object attachment;
 	
-	public AbstractClient(Protocol protocol, Server server, String host, int port)
+	public AbstractClient(Protocol protocol, Server server, InetSocketAddress address)
 	{
 		this.protocol = protocol;
 		this.server = server;
-		this.host = host;
-		this.port = port;
+		this.address = address;
 		this.initialized = false;
+		this.closed = true;
 		this.nextTime = System.currentTimeMillis();
 	}
 
@@ -61,6 +63,11 @@ public abstract class AbstractClient implements Client
 	protected abstract void onClose() throws IOException;
 	protected abstract void onWrite(ByteBuffer packet) throws IOException;
 	protected abstract int onRead(ByteBuffer out) throws IOException;
+
+	protected abstract boolean onReadPacketHeader(ByteBuffer in, PacketHeader packet);
+	protected abstract void onWritePacketHeader(ByteBuffer out);
+	protected abstract int onWritePacketSize(ByteBuffer out );
+	
 	
 	private boolean isNotReady()
 	{
@@ -75,6 +82,7 @@ public abstract class AbstractClient implements Client
 			onInit();
 			
 			initialized = true;
+			closed = false;
 		}
 		catch (IOException e)
 		{
@@ -91,6 +99,7 @@ public abstract class AbstractClient implements Client
 			inbound = new ArrayDeque<RemoteMethodCall>();
 			bufferOut = new ArrayDeque<ByteBuffer>();
 			buffer = protocol.allocateBuffer();
+			lastUpdateTime = System.currentTimeMillis();
 		}
 	}
 	
@@ -123,7 +132,7 @@ public abstract class AbstractClient implements Client
 		{
 			buffer.flip();
 			
-			while (readBuffer())
+			while (readBuffer(buffer))
 			{
 				packetsRead++;
 			}
@@ -132,40 +141,25 @@ public abstract class AbstractClient implements Client
 		durationRead = System.nanoTime() - startTime;
 	}
 	
-	private boolean readBuffer()
+	protected boolean readBuffer(ByteBuffer buffer)
 	{
-		if (buffer.remaining() < Protocol.HEADER_SIZE)
+	    if (!onReadPacketHeader( buffer, packet ))
+	    {
+	        unflip( buffer );
+	        
+	        return false;
+	    }
+		
+		if (packet.magicNumber != protocol.getMagicNumber())
 		{
-			unflip( buffer );
-			
-			return false;
+		    close();
+		    
+		    return false;
 		}
 		
-		int magicNumber = buffer.getInt();
+		pingTime = System.nanoTime() - packet.receivedTime;
 		
-		if (magicNumber != protocol.getMagicNumber())
-		{
-			close();
-			
-			return false;
-		}
-		
-		int packetIndex = buffer.getInt();
-		long packetTime = buffer.getLong();
-		long receivedTime = buffer.getLong();
-		int packetSize = buffer.getInt();
-		
-		if (buffer.remaining() < packetSize)
-		{
-			unflip( buffer );
-			
-			return false;
-		}
-		
-		pingTime = System.nanoTime() - receivedTime;
-		
-		int callCount = 0;
-		int finalPosition = buffer.position() + packetSize;
+		int finalPosition = buffer.position() + packet.size;
 		
 		while (buffer.position() < finalPosition)
 		{
@@ -175,11 +169,9 @@ public abstract class AbstractClient implements Client
 			try
 			{
 				RemoteMethodEntry entry = protocol.getEntry( interfaceId, methodId );
-				
 				Object[] arguments = entry.reflectMethod.get( buffer );
 				
-				entry.method.invoke( entry.listener, arguments );
-				callCount++;
+				handleInvocation( entry, arguments );
 			}
 			catch (Exception e)
 			{
@@ -187,10 +179,37 @@ public abstract class AbstractClient implements Client
 			}
 		}
 		
-		lastReceivedPacketSize = packetSize;
-		lastReceivedPacketTime = packetTime;
+		lastReceivedPacketSize = packet.size;
+		lastReceivedPacketTime = packet.time;
 		
 		return true;
+	}
+	
+	private void handleInvocation( RemoteMethodEntry entry, Object[] arguments ) throws Exception
+	{
+	    RemoteMethod remoteMethod = entry.remoteMethod;
+        Match readMatch = remoteMethod.readMatch();
+        int readStates = remoteMethod.readStates();
+        MismatchAction readAction = remoteMethod.readMismatch();
+
+        if (readMatch.isMatch( readStates, getStates() ))
+        {
+            entry.method.invoke( entry.listener, arguments );
+        }
+        else
+        {
+            switch (readAction) 
+            {
+            case CLOSE:
+                close();
+                break;
+            case LOG:
+                System.out.format( "Tried to invoke %s.%s on client at %s but they are not in the correct state (%d with match %s) they have the state %d.", entry.listener.getClass().getSimpleName(), entry.method.getName(), getAddress(), readStates, readMatch, getStates() );
+                break;
+            case NOTHING:
+                break;
+            }
+        }
 	}
 	
 	private void unflip( ByteBuffer bb )
@@ -249,17 +268,13 @@ public abstract class AbstractClient implements Client
 		ByteBuffer out = protocol.allocateBuffer();
 		
 		out.clear();
-		out.putInt( protocol.getMagicNumber() );
-		out.putInt( packetIndex );
-		out.putLong( System.nanoTime() );
-		out.putLong( lastReceivedPacketTime );
-		out.putInt( 0 );
+		onWritePacketHeader( out );
 		
 		callsSent = 0;
 		
 		while (!outbound.isEmpty() && tryPut(outbound.peek(), out))
 		{
-			outbound.peek();
+			outbound.poll();
 			callsSent++;
 		}
 
@@ -267,9 +282,7 @@ public abstract class AbstractClient implements Client
 		
 		if (callsSent > 0)
 		{
-			lastSentPacketSize = out.limit() - Protocol.HEADER_SIZE;
-			
-			out.putInt( Protocol.HEADER_PACKET_SIZE_OFFSET, lastSentPacketSize );
+			lastSentPacketSize = onWritePacketSize( out );
 			
 			bufferOut.offer( out );
 			
@@ -322,7 +335,7 @@ public abstract class AbstractClient implements Client
 		}
 	}
 
-	private void write() throws IOException
+	protected void write() throws IOException
 	{
 		if (isNotReady()) {
 			return;
@@ -405,15 +418,9 @@ public abstract class AbstractClient implements Client
 	}
 
 	@Override
-	public String getHost()
+	public InetSocketAddress getAddress()
 	{
-		return host;
-	}
-
-	@Override
-	public int getPort()
-	{
-		return port;
+	    return address;
 	}
 
 	@Override
@@ -449,25 +456,25 @@ public abstract class AbstractClient implements Client
 	@Override
 	public int getCallsSent()
 	{
-		return 0;
+		return callsSent;
 	}
 
 	@Override
 	public int getPacketsRead()
 	{
-		return 0;
+		return packetsRead;
 	}
 
 	@Override
 	public int getPacketIndex()
 	{
-		return 0;
+		return packetIndex;
 	}
 
 	@Override
 	public int getLastPacketSize()
 	{
-		return 0;
+		return lastSentPacketSize;
 	}
 
 	@Override
@@ -500,7 +507,8 @@ public abstract class AbstractClient implements Client
 		this.attachment = attachment;
 	}
 	
-	@Override
+    @SuppressWarnings ("unchecked" )
+    @Override
 	public <T> T attachment()
 	{
 		return (T) attachment;

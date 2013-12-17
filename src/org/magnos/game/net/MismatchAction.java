@@ -4,5 +4,5 @@ public enum MismatchAction
 {
 	NOTHING,
 	LOG,
-	EXCEPTION
+	CLOSE
 }

@@ -1,6 +1,7 @@
 package org.magnos.game.net;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Queue;
 
 
@@ -22,8 +23,7 @@ public interface Client
 
     public <T> T newService(Class<T> remoteInterface);
     
-    public String getHost();
-    public int getPort();
+    public InetSocketAddress getAddress();
     public Queue<RemoteMethodCall> getOutbound();
     public Queue<RemoteMethodCall> getInbound();
     public long getUpdateRate();

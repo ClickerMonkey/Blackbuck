@@ -46,40 +46,46 @@ public class Service<T> implements InvocationHandler
 		assert object.getClass() == interfaceClass;
 		assert targetClients != null;
 
-		MethodMeta meta = remoteMethods.get( method );
+		final MethodMeta meta = remoteMethods.get( method );
 
 		if (meta != null)
 		{
-			RemoteMethodCall call = new RemoteMethodCall();
+		    final RemoteMethodCall call = new RemoteMethodCall();
 			call.remoteInterface = remoteInterface;
 			call.remoteMethod = meta.remoteMethod;
 			call.reflectMethod = meta.reflectMethod;
 			call.callSize = meta.reflectMethod.sizeOf( arguments );
 			call.arguments = arguments;
 
-			Match match = meta.remoteMethod.writeMatch();
-			int states = meta.remoteMethod.writeStates();
-			MismatchAction action = meta.remoteMethod.writeMismatch();
+			final Match writeMatch = meta.remoteMethod.writeMatch();
+			final int writeStates = meta.remoteMethod.writeStates();
+			final MismatchAction writeAction = meta.remoteMethod.writeMismatch();
 			
 			for (Client client : targetClients)
 			{
-				if (match.isMatch( states, client.getStates() ))
+				if (writeMatch.isMatch( writeStates, client.getStates() ))
 				{
 					client.queue( call );
 				}
 				else
 				{
-					
-					
-					switch (action) {
-					case EXCEPTION:
-						throw new RuntimeException( "" );
+					switch (writeAction) 
+					{
+					case CLOSE:
+					    client.close();
+					    break;
 					case LOG:
-						
-						
+					    System.out.format( "Tried to send %s.%s to client at %s but they are not in the correct state (%d with match %s) they have the state %d.", interfaceClass.getSimpleName(), method.getName(), client.getAddress(), writeStates, writeMatch, client.getStates() );
+						break;
+					case NOTHING:
+					    break;
 					}
 				}
 			}
+		}
+		else
+		{
+		    return method.invoke( object, arguments );
 		}
 
 		return null;

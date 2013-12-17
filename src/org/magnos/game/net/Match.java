@@ -37,7 +37,21 @@ public enum Match
 		{
 			return (set & input) != input;
 		}
-	};
+	},
+    ALWAYS()
+    {
+        public final boolean isMatch( int set, int input )
+        {
+            return true;
+        }
+    },
+    NEVER()
+    {
+        public final boolean isMatch( int set, int input )
+        {
+            return false;
+        }
+    };
 
 	public abstract boolean isMatch( int set, int input );
 }
