@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
+import java.util.PriorityQueue;
 import java.util.Queue;
 
 import org.magnos.game.net.util.IterableSingle;
@@ -16,7 +17,7 @@ public abstract class AbstractClient implements Client
 	protected final Server server;
 	protected final InetSocketAddress address;
 	
-	protected Queue<RemoteMethodCall> outbound;
+	protected PriorityQueue<RemoteMethodCall> outbound;
 	protected Queue<RemoteMethodCall> inbound;
 	
 	protected ByteBuffer buffer;
@@ -95,7 +96,7 @@ public abstract class AbstractClient implements Client
 		
 		if (initialized)
 		{
-			outbound = new ArrayDeque<RemoteMethodCall>();
+			outbound = new PriorityQueue<RemoteMethodCall>();
 			inbound = new ArrayDeque<RemoteMethodCall>();
 			bufferOut = new ArrayDeque<ByteBuffer>();
 			buffer = protocol.allocateBuffer();
@@ -424,7 +425,7 @@ public abstract class AbstractClient implements Client
 	}
 
 	@Override
-	public Queue<RemoteMethodCall> getOutbound()
+	public PriorityQueue<RemoteMethodCall> getOutbound()
 	{
 		return outbound;
 	}

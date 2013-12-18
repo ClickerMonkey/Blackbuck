@@ -56,6 +56,7 @@ public class Service<T> implements InvocationHandler
 			call.reflectMethod = meta.reflectMethod;
 			call.callSize = meta.reflectMethod.sizeOf( arguments );
 			call.arguments = arguments;
+			call.timestamp = System.nanoTime();
 
 			final Match writeMatch = meta.remoteMethod.writeMatch();
 			final int writeStates = meta.remoteMethod.writeStates();
