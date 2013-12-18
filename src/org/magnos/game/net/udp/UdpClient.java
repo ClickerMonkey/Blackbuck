@@ -81,8 +81,8 @@ public class UdpClient extends AbstractClient
 
         long packetTime = in.getLong();
         long receivedTime = in.getLong();
-        int ack = in.getInt();
-        int ackSequence = in.getInt();
+        int ack = in.getInt(); // this is the packet index the other last received
+        int ackSequence = in.getInt(); // this is the bitset of previous packets they received
         int packetSize = in.getInt();
         
         if (in.remaining() < packetSize)
@@ -108,11 +108,11 @@ public class UdpClient extends AbstractClient
     protected void onWritePacketHeader( ByteBuffer out )
     {
         out.putInt( protocol.getMagicNumber() );
-        out.putInt( packetIndex );
+        out.putInt( packetIndex ); // this is MY packet index, please acknowledge
         out.putLong( System.nanoTime() );
         out.putLong( lastReceivedPacketTime );
-        out.putInt( writeAck );
-        out.putInt( writeAckSequence );
+        out.putInt( writeAck ); // hey this is the index of the last packet we received from you
+        out.putInt( writeAckSequence ); // this is the bitset of previous packets we've received from you
         out.putInt( 0 );
     }
 
