@@ -15,7 +15,7 @@ public class UdpProtocolProvider implements ProtocolProvider
     @Override
     public Client newClient( Protocol protocol, String host, int port )
     {
-        return new UdpClient( protocol, null, new InetSocketAddress( host, port ) );
+        return new UdpClient( protocol, new InetSocketAddress( host, port ) );
     }
 
     @Override

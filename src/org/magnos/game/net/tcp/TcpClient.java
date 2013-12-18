@@ -7,16 +7,16 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
 import org.magnos.game.net.AbstractClient;
-import org.magnos.game.net.PacketHeader;
 import org.magnos.game.net.Protocol;
+import org.magnos.game.net.RemoteMethodCall;
 import org.magnos.game.net.Server;
 
 
 public class TcpClient extends AbstractClient
 {
 
-    public static final int HEADER_SIZE = 16;
-    public static final int HEADER_PACKET_SIZE_OFFSET = 24;
+    public static final int HEADER_SIZE = 24;
+    public static final int HEADER_PACKET_SIZE_OFFSET = 20;
 
     public SocketChannel socket;
 
@@ -60,10 +60,7 @@ public class TcpClient extends AbstractClient
     @Override
     protected void onClose() throws IOException
     {
-        if (socket.isOpen())
-        {
-            socket.close();
-        }
+        socket.close();
     }
 
     @Override
@@ -77,34 +74,48 @@ public class TcpClient extends AbstractClient
     {
         return socket.read( out );
     }
+    
+    @Override
+    protected void onCallWrite(RemoteMethodCall call)
+    {
+        
+    }
 
     @Override
-    protected boolean onReadPacketHeader( ByteBuffer in, PacketHeader packet )
+    protected int onReadPacketHeader( ByteBuffer in )
     {
         if (in.remaining() < HEADER_SIZE)
         {
-            return false;
+            return ON_READ_REWIND;
         }
 
-        packet.magicNumber = in.getInt();
-        packet.index = in.getInt();
-        packet.time = in.getLong();
-        packet.receivedTime = in.getLong();
-        packet.size = in.getInt();
-
-        if (in.remaining() < packet.size)
+        int magicNumber = in.getInt();
+        
+        if (magicNumber != protocol.getMagicNumber())
         {
-            return false;
+            return ON_READ_CLOSE;
         }
+        
+        long packetTime = in.getLong();
+        long receivedTime = in.getLong();
+        int packetSize = in.getInt();
+        
+        if (in.remaining() < packetSize)
+        {
+            return ON_READ_REWIND;
+        }
+        
+        pingTime = System.nanoTime() - receivedTime;
+        lastReceivedPacketSize = packetSize;
+        lastReceivedPacketTime = packetTime;
 
-        return true;
+        return packetSize;
     }
-
+    
     @Override
     protected void onWritePacketHeader( ByteBuffer out )
     {
         out.putInt( protocol.getMagicNumber() );
-        out.putInt( packetIndex );
         out.putLong( System.nanoTime() );
         out.putLong( lastReceivedPacketTime );
         out.putInt( 0 );

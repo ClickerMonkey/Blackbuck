@@ -54,9 +54,10 @@ public class Service<T> implements InvocationHandler
 			call.remoteInterface = remoteInterface;
 			call.remoteMethod = meta.remoteMethod;
 			call.reflectMethod = meta.reflectMethod;
-			call.callSize = meta.reflectMethod.sizeOf( arguments );
 			call.arguments = arguments;
 			call.timestamp = System.nanoTime();
+			call.retries = meta.remoteMethod.retryCount();
+			call.callSize = meta.reflectMethod.sizeOf( arguments );
 
 			final Match writeMatch = meta.remoteMethod.writeMatch();
 			final int writeStates = meta.remoteMethod.writeStates();

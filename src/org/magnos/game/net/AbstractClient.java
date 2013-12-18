@@ -12,6 +12,8 @@ import org.magnos.reflect.util.Compress;
 
 public abstract class AbstractClient implements Client
 {
+    protected static final int ON_READ_REWIND = -1;
+    protected static final int ON_READ_CLOSE = -2;
     
 	protected final Protocol protocol;
 	protected final Server server;
@@ -22,8 +24,6 @@ public abstract class AbstractClient implements Client
 	
 	protected ByteBuffer buffer;
 	protected Queue<ByteBuffer> bufferOut;
-	
-	protected PacketHeader packet;
 	
 	protected boolean initialized;
 	protected long updateRate;
@@ -64,11 +64,11 @@ public abstract class AbstractClient implements Client
 	protected abstract void onClose() throws IOException;
 	protected abstract void onWrite(ByteBuffer packet) throws IOException;
 	protected abstract int onRead(ByteBuffer out) throws IOException;
+	protected abstract void onCallWrite(RemoteMethodCall call);
 
-	protected abstract boolean onReadPacketHeader(ByteBuffer in, PacketHeader packet);
+	protected abstract int onReadPacketHeader(ByteBuffer in);
 	protected abstract void onWritePacketHeader(ByteBuffer out);
 	protected abstract int onWritePacketSize(ByteBuffer out );
-	
 	
 	private boolean isNotReady()
 	{
@@ -144,23 +144,22 @@ public abstract class AbstractClient implements Client
 	
 	protected boolean readBuffer(ByteBuffer buffer)
 	{
-	    if (!onReadPacketHeader( buffer, packet ))
+	    int result = onReadPacketHeader( buffer ); 
+	    
+	    if (result == ON_READ_REWIND)
 	    {
 	        unflip( buffer );
 	        
 	        return false;
 	    }
-		
-		if (packet.magicNumber != protocol.getMagicNumber())
-		{
-		    close();
-		    
-		    return false;
-		}
-		
-		pingTime = System.nanoTime() - packet.receivedTime;
-		
-		int finalPosition = buffer.position() + packet.size;
+	    else if (result == ON_READ_CLOSE)
+	    {
+	        close();
+            
+            return false;
+	    }
+	    
+		int finalPosition = buffer.position() + result;
 		
 		while (buffer.position() < finalPosition)
 		{
@@ -172,16 +171,13 @@ public abstract class AbstractClient implements Client
 				RemoteMethodEntry entry = protocol.getEntry( interfaceId, methodId );
 				Object[] arguments = entry.reflectMethod.get( buffer );
 				
-				handleInvocation( entry, arguments );
+			    handleInvocation( entry, arguments );    
 			}
 			catch (Exception e)
 			{
 				throw new RuntimeException( e );
 			}
 		}
-		
-		lastReceivedPacketSize = packet.size;
-		lastReceivedPacketTime = packet.time;
 		
 		return true;
 	}
@@ -275,7 +271,9 @@ public abstract class AbstractClient implements Client
 		
 		while (!outbound.isEmpty() && tryPut(outbound.peek(), out))
 		{
-			outbound.poll();
+		    RemoteMethodCall call = outbound.poll();
+		    call.packetIndex = packetIndex;
+		    onCallWrite( call );
 			callsSent++;
 		}
 

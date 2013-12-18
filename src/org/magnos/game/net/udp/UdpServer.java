@@ -17,14 +17,14 @@ public class UdpServer extends AbstractServer
 {
 
     public DatagramChannel channel;
-    public Map<SocketAddress, UdpClient> clientMap;
+    public Map<SocketAddress, UdpServerClient> clientMap;
     public ByteBuffer packet;
     
     public UdpServer( Protocol protocol, int port )
     {
         super( protocol, port );
         
-        this.clientMap = new HashMap<SocketAddress, UdpClient>();
+        this.clientMap = new HashMap<SocketAddress, UdpServerClient>();
         this.packet = protocol.allocateBuffer();
     }
     
@@ -48,15 +48,15 @@ public class UdpServer extends AbstractServer
         packet.clear();
         
         InetSocketAddress address = (InetSocketAddress)channel.receive( packet );
-        UdpClient newClient = null;
+        UdpServerClient newClient = null;
         
         if (address != null)
         {
-            UdpClient c = clientMap.get( address );
+            UdpServerClient c = clientMap.get( address );
             
             if (c == null)
             {
-                c = new UdpClient( protocol, this, address );
+                c = new UdpServerClient( protocol, this, address );
                 clientMap.put( address, c );
                 newClient = c;
             }
