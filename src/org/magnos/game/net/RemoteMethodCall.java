@@ -11,6 +11,8 @@ public class RemoteMethodCall implements Comparable<RemoteMethodCall>
     public Object[] arguments;
     public int callSize;
     public long timestamp;
+    public int packetIndex;
+    public int retries;
     
     @Override
     public int compareTo( RemoteMethodCall o )
