@@ -80,11 +80,11 @@ public class Protocol
     }
 
     @SuppressWarnings ("unchecked" )
-    private <T> T[] ensureIndex( T[] array, int index )
+    private <T> T[] ensureIndex( T[] array, int index, T ... emptyArray )
     {
         if (array == null)
         {
-            array = (T[])new Object[index + 1];
+            array = Arrays.copyOf( emptyArray, index + 1 );
         }
         else if (index >= array.length)
         {
@@ -125,7 +125,10 @@ public class Protocol
 
                 for (RemoteMethodEntry entry : entries[ri.id()])
                 {
-                    entry.listener = listener;
+                    if (entry != null)
+                    {
+                        entry.listener = listener;    
+                    }
                 }
             }
         }

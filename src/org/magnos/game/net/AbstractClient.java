@@ -83,7 +83,6 @@ public abstract class AbstractClient implements Client
 			onInit();
 			
 			initialized = true;
-			closed = false;
 		}
 		catch (IOException e)
 		{
@@ -101,6 +100,7 @@ public abstract class AbstractClient implements Client
 			bufferOut = new ArrayDeque<ByteBuffer>();
 			buffer = protocol.allocateBuffer();
 			lastUpdateTime = System.currentTimeMillis();
+            closed = false;
 		}
 	}
 	
@@ -113,7 +113,8 @@ public abstract class AbstractClient implements Client
 	@Override
 	public void read() throws IOException
 	{
-		if (isNotReady()) {
+		if (isNotReady()) 
+		{
 			return;
 		}
 		
@@ -133,9 +134,14 @@ public abstract class AbstractClient implements Client
 		{
 			buffer.flip();
 			
-			while (readBuffer(buffer))
+			while (!closed && readBuffer(buffer))
 			{
 				packetsRead++;
+			}
+			
+			if (!closed && packetsRead > 0)
+			{
+			    compact( buffer );
 			}
 		}
 		
@@ -161,7 +167,7 @@ public abstract class AbstractClient implements Client
 	    
 		int finalPosition = buffer.position() + result;
 		
-		while (buffer.position() < finalPosition)
+		while (!closed && buffer.position() < finalPosition)
 		{
 			int interfaceId = Compress.getIntUnsigned( buffer );
 			int methodId = Compress.getIntUnsigned( buffer );
@@ -191,6 +197,11 @@ public abstract class AbstractClient implements Client
 
         if (readMatch.isMatch( readStates, getStates() ))
         {
+            if (entry.listener instanceof HasClient)
+            {
+                ((HasClient)entry.listener).setCurrentClient( this );
+            }
+            
             entry.method.invoke( entry.listener, arguments );
         }
         else
@@ -215,11 +226,22 @@ public abstract class AbstractClient implements Client
 		bb.limit( bb.capacity() );
 		bb.position( readMax );
 	}
+	
+	private void compact( ByteBuffer bb )
+	{
+	    int newLimit = buffer.limit() - buffer.position();
+        buffer.compact();
+        buffer.position( 0 );
+        buffer.limit( newLimit );
+	}
 
 	@Override
 	public void update() throws IOException
 	{
-		if (isNotReady()) {
+		if (isNotReady()) 
+		{
+		    readyToSend = false;
+		    
 			return;
 		}
 
@@ -363,22 +385,32 @@ public abstract class AbstractClient implements Client
 	@Override
 	public void close()
 	{
-		if (isNotReady()) {
+		if (isNotReady()) 
+		{
 			return;
 		}
 		
-		try {
+		try 
+		{
 			onClose();
-		} catch (IOException e) {
+		} 
+		catch (IOException e) 
+		{
 			// ignore
-		} finally {
+		}
+		finally 
+		{
 			closed = true;
 
-			if (initialized) {
+			if (initialized) 
+			{
 				protocol.releaseBuffer( buffer );
-				for (ByteBuffer bb : bufferOut) {
+				
+				for (ByteBuffer bb : bufferOut) 
+				{
 					protocol.releaseBuffer( bb );
 				}
+				
 				bufferOut = null;
 				buffer = null;
 				inbound = null;

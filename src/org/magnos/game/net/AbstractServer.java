@@ -20,6 +20,7 @@ public abstract class AbstractServer implements Server
     protected Set<Client> clients;
 
     protected long idleSleepMillis = 1;
+    protected long clientUpdateRate;
 
     public AbstractServer( Protocol protocol, int port )
     {
@@ -47,6 +48,7 @@ public abstract class AbstractServer implements Server
             onInit();
 
             initialized = true;
+            closed = false;
         }
         catch (IOException e)
         {
@@ -134,6 +136,7 @@ public abstract class AbstractServer implements Server
         try
         {
             c.init();
+            c.setUpdateRate( clientUpdateRate );
 
             listener.onClientConnect( this, c );
             clients.add( c );
@@ -250,6 +253,16 @@ public abstract class AbstractServer implements Server
     public void setIdleSleepMillis( long sleep )
     {
         this.idleSleepMillis = sleep;
+    }
+    
+    public long getClientUpdateRate()
+    {
+        return clientUpdateRate;
+    }
+    
+    public void setClientUpdateRate(long updateRate)
+    {
+        this.clientUpdateRate = updateRate;
     }
 
 }

@@ -24,4 +24,7 @@ public interface Server
     
     public long getIdleSleepMillis();
     public void setIdleSleepMillis(long sleep);
+    
+    public long getClientUpdateRate();
+    public void setClientUpdateRate(long updateRate);
 }
