@@ -6,6 +6,7 @@ import java.util.Scanner;
 import org.magnos.game.net.Client;
 import org.magnos.game.net.Protocol;
 
+
 public class UserMain
 {
 
@@ -15,19 +16,19 @@ public class UserMain
 
         Protocol protocol = MessageProtocol.PROTOCOL;
         protocol.addListener( userImplementation );
-        
+
         Client client = protocol.newClient( MessageProtocol.HOST, MessageProtocol.PORT );
         client.setUpdateRate( MessageProtocol.CLIENT_UPDATE_RATE );
         client.init();
 
         UserToServer service = client.newService( UserToServer.class );
-        
+
         Scanner inputName = new Scanner( System.in );
-        System.out.print( "Name > ");
+        System.out.print( "Name > " );
         service.onSignIn( inputName.nextLine() );
-        
+
         MessageFeed feed = new MessageFeed();
-        
+
         while (!client.isClosed())
         {
             if (feed.isFinished())
@@ -42,10 +43,10 @@ public class UserMain
                 {
                     service.onMessage( m );
                 }
-                
+
                 client.read();
                 client.update();
-                
+
                 if (client.isReadyToSend())
                 {
                     client.send();

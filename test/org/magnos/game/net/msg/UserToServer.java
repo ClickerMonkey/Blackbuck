@@ -4,6 +4,7 @@ package org.magnos.game.net.msg;
 import org.magnos.game.net.RemoteInterface;
 import org.magnos.game.net.RemoteMethod;
 
+
 @RemoteInterface (id = 0 )
 public interface UserToServer
 {
@@ -16,4 +17,5 @@ public interface UserToServer
 
     @RemoteMethod (id = 2 )
     public void onSignOut();
+    
 }

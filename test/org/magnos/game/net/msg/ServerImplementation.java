@@ -9,7 +9,8 @@ import org.magnos.game.net.HasClient;
 import org.magnos.game.net.Server;
 import org.magnos.game.net.ServerListener;
 
-public class ServerImplementation  implements HasClient, UserToServer, ServerListener
+
+public class ServerImplementation implements HasClient, UserToServer, ServerListener
 {
 
     public Client currentClient;
@@ -20,7 +21,7 @@ public class ServerImplementation  implements HasClient, UserToServer, ServerLis
     {
         currentClient = client;
     }
-    
+
     @Override
     public void onSignIn( String name )
     {
@@ -103,7 +104,7 @@ public class ServerImplementation  implements HasClient, UserToServer, ServerLis
     public void onAcceptError( Server server, Exception e )
     {
         System.out.println( "SERVER: client accept error: " );
-        
+
         if (e != null) e.printStackTrace();
     }
 
@@ -111,7 +112,7 @@ public class ServerImplementation  implements HasClient, UserToServer, ServerLis
     public void onClientClose( Server server, Client client, Exception e )
     {
         System.out.println( "SERVER: client close: " + client.getAddress() );
-        
+
         if (e != null) e.printStackTrace();
     }
 
@@ -124,27 +125,27 @@ public class ServerImplementation  implements HasClient, UserToServer, ServerLis
     @Override
     public void onUpdateBegin( Server server )
     {
-        
+
     }
 
     @Override
     public void onUpdateEnd( Server server )
     {
-        
+
     }
 
     @Override
     public void onClientFailedConnect( Server server, Client client, Exception e )
     {
         System.out.println( "SERVER: client failed to connect: " + client.getAddress() );
-        
+
         if (e != null) e.printStackTrace();
     }
 
     @Override
     public void onClientUpdate( Server server, Client client )
     {
-        
+
     }
 
 }
