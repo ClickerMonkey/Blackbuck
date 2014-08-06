@@ -1,7 +1,7 @@
 Blackbuck
 =========
 
-The _easiest_ game networking library in Java available! You don't have to know anything about networking, you don't have to write **boring** writing/parsing & message code, and Blackbuck will automatically handle _compressing_ your data, _prioritization_, virtual _channels_ of communition, and let you customize how _reliable_ and _ordered_ your data is!
+The **easiest** game networking library in Java available! You don't have to know anything about networking, _you don't have to write boring writing/parsing & message code_, and Blackbuck will automatically handle **compressing** your data, **prioritization**, virtual **channels** of communition, and let you customize how **reliable** and **ordered** your data is!
 
 ### Features
 1. `Simple`
