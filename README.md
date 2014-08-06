@@ -1,6 +1,21 @@
 Blackbuck
 =========
 
+The _easiest_ game networking library in Java available! You don't have to know anything about networking, you don't have to write **boring** writing/parsing & message code, and Blackbuck will automatically handle _compressing_ your data, _prioritization_, virtual _channels_ of communition, and let you customize how _reliable_ and _ordered_ your data is!
+
+### Features
+1. `Simple`
+ * messages are sent by calling methods, you don't need to create a class for every type of message communicated between server and client AND write the writing/parsing code.
+2. `Fast`
+ * uses non-blocking I/O
+3. `Compression`
+ * takes advantage of another library to store numbers in the least number of bytes possible
+4. `Security`
+ * packets that don't have the correct magic number for your game are ignored and the erroneous connection is closed
+ * messages that are expected to be received in a certain client state but are not can result in closing the connection, logging, notification, or nothing.
+
+### How it works
+
 A game networking library in java focused around making asynchronous method calls.
 
 With Blackbuck you can define interfaces for one-way communication between a client and a server. 
