@@ -42,7 +42,7 @@ public class ServerToUser
 ### Defining the Protocol
 
 ```java
-Protocol protocol = new Protocol( 1380, new TcpNetworking() );
+Protocol protocol = new Protocol( 1380, new TcpProtocolProvider() );
 protocol.addInterface( UserToServer.class );
 protocol.addInterface( ServerToUser.clsas );
 ```
