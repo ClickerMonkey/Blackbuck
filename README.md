@@ -85,5 +85,27 @@ protocol.addListener( new UserToServer() {
 
 ### How does it work?
 
-When you call something like `server.onSendMessage( "Hello, World!" )` it queues that method call on the client. The client will send method calls every so often (user specified, default 20 batchers per second). Once the server receives the method call, the listener on the server side is found and the appropriate method is invoked.
+When you call something like `server.onSendMessage( "Hello, World!" )` it queues that method call on the client. The client will send method calls every so often (user specified, default 20 batches per second). Once the server receives the method call, the listener on the server side is found and the appropriate method is invoked.
 
+### When does it send the messages?
+
+There's a snippet of code you need to add in your update loop which handles processing messages in the queue into packets and sending them, as well as reading in messages and notifying listeners.
+
+*Client Update Logic*
+```java
+client.read();
+client.update();
+
+if (client.isReadyToSend())
+{
+  client.send();
+}
+```
+
+*Server Update Logic*
+```java
+while (!server.isClosed())
+{
+  server.update();
+}
+```
