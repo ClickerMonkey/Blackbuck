@@ -379,7 +379,7 @@ public abstract class AbstractClient implements Client
 			protocol.releaseBuffer( next );
 		}
 		
-		durationRead = System.nanoTime() - startTime;
+		durationWrite = System.nanoTime() - startTime;
 	}
 	
 	@Override
