@@ -37,7 +37,7 @@ public class TcpClient extends AbstractClient
     {
         if (socket == null)
         {
-            socket = SocketChannel.open();
+            socket = protocol.getChannels().newSocket();
             socket.configureBlocking( false );
             socket.connect( address );
             

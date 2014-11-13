@@ -31,7 +31,7 @@ public class UdpServer extends AbstractServer
     @Override
     protected void onInit() throws IOException
     {
-        channel = DatagramChannel.open();
+    	channel = protocol.getChannels().newDatagram();
         channel.socket().bind( new InetSocketAddress( port ) );
         channel.configureBlocking( false );
     }

@@ -29,7 +29,7 @@ public class UdpClient extends AbstractClient
     @Override
     protected void onInit() throws IOException
     {
-        channel = DatagramChannel.open();
+    	channel = protocol.getChannels().newDatagram();
         channel.configureBlocking( false );
         channel.connect( address );
     }

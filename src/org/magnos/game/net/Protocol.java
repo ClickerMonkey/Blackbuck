@@ -6,25 +6,35 @@ import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 
+import org.magnos.game.net.nio.NioChannelProvider;
 import org.magnos.reflect.ReflectFactory;
 
 
 public class Protocol
 {
+	
+	public static ChannelProvider DEFAULT_CHANNEL_PROVIDER = NioChannelProvider.INSTANCE;
 
     private int magicNumber;
     private int bufferSize;
     private ProtocolProvider provider;
+    private ChannelProvider channels;
     private ArrayDeque<ByteBuffer> bufferPool;
 
     private RemoteMethodEntry[][] entries = {};
 
     public Protocol( int magicNumber, int bufferSize, ProtocolProvider provider )
     {
+    	this( magicNumber, bufferSize, provider, DEFAULT_CHANNEL_PROVIDER );
+    }
+    
+    public Protocol( int magicNumber, int bufferSize, ProtocolProvider provider, ChannelProvider channels )
+    {
         this.magicNumber = magicNumber;
         this.bufferSize = bufferSize;
         this.bufferPool = new ArrayDeque<ByteBuffer>();
         this.provider = provider;
+        this.channels = channels;
     }
 
     public ByteBuffer allocateBuffer()
@@ -79,7 +89,6 @@ public class Protocol
         }
     }
 
-    @SuppressWarnings ("unchecked" )
     private <T> T[] ensureIndex( T[] array, int index, T ... emptyArray )
     {
         if (array == null)
@@ -159,6 +168,11 @@ public class Protocol
     public ProtocolProvider getProvider()
     {
         return provider;
+    }
+    
+    public ChannelProvider getChannels()
+    {
+    	return channels;
     }
 
 }

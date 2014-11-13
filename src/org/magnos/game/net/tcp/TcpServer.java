@@ -24,7 +24,7 @@ public class TcpServer extends AbstractServer
     @Override
     protected void onInit() throws IOException
     {
-        socket = ServerSocketChannel.open();
+    	socket = protocol.getChannels().newServerSocket();
         socket.socket().bind( new InetSocketAddress( port ) );
         socket.configureBlocking( false );
     }
