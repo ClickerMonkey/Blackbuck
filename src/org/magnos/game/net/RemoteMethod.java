@@ -27,11 +27,7 @@ public @interface RemoteMethod
 
     public Match readMatch() default Match.ALWAYS;
 
-    public MismatchAction readMismatch() default MismatchAction.NOTHING;
-
     public int writeStates() default -1;
 
     public Match writeMatch() default Match.ALWAYS;
-
-    public MismatchAction writeMismatch() default MismatchAction.NOTHING;
 }

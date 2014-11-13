@@ -61,27 +61,13 @@ public class Service<T> implements InvocationHandler
 
 			final Match writeMatch = meta.remoteMethod.writeMatch();
 			final int writeStates = meta.remoteMethod.writeStates();
-			final MismatchAction writeAction = meta.remoteMethod.writeMismatch();
 			
 			for (Client client : targetClients)
 			{
-				if (writeMatch.isMatch( writeStates, client.getStates() ))
+				if (writeMatch.isMatch( writeStates, client.getStates() ) || 
+				   !client.getProtocol().notifyWriteBlock(client, writeMatch, writeStates, client.getStates()))
 				{
 					client.queue( call );
-				}
-				else
-				{
-					switch (writeAction) 
-					{
-					case CLOSE:
-					    client.close();
-					    break;
-					case LOG:
-					    System.out.format( "Tried to send %s.%s to client at %s but they are not in the correct state (%d with match %s) they have the state %d.", interfaceClass.getSimpleName(), method.getName(), client.getAddress(), writeStates, writeMatch, client.getStates() );
-						break;
-					case NOTHING:
-					    break;
-					}
 				}
 			}
 		}

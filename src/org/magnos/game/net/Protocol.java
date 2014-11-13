@@ -18,6 +18,7 @@ public class Protocol
     private int magicNumber;
     private int bufferSize;
     private ProtocolProvider provider;
+    private ProtocolListener listener;
     private ChannelProvider channels;
     private ArrayDeque<ByteBuffer> bufferPool;
 
@@ -154,6 +155,16 @@ public class Protocol
 
         return entries[interfaceId][methodId];
     }
+    
+    public boolean notifyReadBlock(Client client, Match match, int expectedStates, int actualStates)
+    {
+    	return listener == null || listener.onReadBlock(client, match, expectedStates, actualStates);
+    }
+    
+	public boolean notifyWriteBlock(Client client, Match match, int expectedStates, int actualStates)
+	{
+		return listener == null || listener.onWriteBlock(client, match, expectedStates, actualStates);
+	}
 
     public int getMagicNumber()
     {
@@ -175,4 +186,14 @@ public class Protocol
     	return channels;
     }
 
+	public ProtocolListener getProtocolListener() 
+	{
+		return listener;
+	}
+
+ 	public void setProtocolListener(ProtocolListener listener) 
+ 	{
+		this.listener = listener;
+	}
+ 
 }

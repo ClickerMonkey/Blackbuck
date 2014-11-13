@@ -193,9 +193,9 @@ public abstract class AbstractClient implements Client
 	    RemoteMethod remoteMethod = entry.remoteMethod;
         Match readMatch = remoteMethod.readMatch();
         int readStates = remoteMethod.readStates();
-        MismatchAction readAction = remoteMethod.readMismatch();
 
-        if (readMatch.isMatch( readStates, getStates() ))
+        if (readMatch.isMatch( readStates, getStates() ) || 
+           !protocol.notifyReadBlock(this, readMatch, readStates, getStates()))
         {
             if (entry.listener instanceof HasClient)
             {
@@ -203,20 +203,6 @@ public abstract class AbstractClient implements Client
             }
             
             entry.method.invoke( entry.listener, arguments );
-        }
-        else
-        {
-            switch (readAction) 
-            {
-            case CLOSE:
-                close();
-                break;
-            case LOG:
-                System.out.format( "Tried to invoke %s.%s on client at %s but they are not in the correct state (%d with match %s) they have the state %d.", entry.listener.getClass().getSimpleName(), entry.method.getName(), getAddress(), readStates, readMatch, getStates() );
-                break;
-            case NOTHING:
-                break;
-            }
         }
 	}
 	
