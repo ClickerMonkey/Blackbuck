@@ -47,7 +47,7 @@ public class Service<T> implements InvocationHandler
 		assert targetClients != null;
 
 		final MethodMeta meta = remoteMethods.get( method );
-
+		
 		if (meta != null)
 		{
 		    final RemoteMethodCall call = new RemoteMethodCall();

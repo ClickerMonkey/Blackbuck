@@ -46,6 +46,7 @@ public abstract class AbstractClient implements Client
 	protected int lastSentPacketSize;
 	protected int packetsRead;
 	protected long pingTime;
+	protected int sendIndex;
 	
 	protected Object attachment;
 	
@@ -279,9 +280,9 @@ public abstract class AbstractClient implements Client
 		
 		while (!outbound.isEmpty() && tryPut(outbound.peek(), out))
 		{
-		    RemoteMethodCall call = outbound.poll();
-		    call.packetIndex = packetIndex;
-		    onCallWrite( call );
+			RemoteMethodCall call = outbound.poll();
+			call.packetIndex = packetIndex;
+			onCallWrite( call );
 			callsSent++;
 		}
 
@@ -303,6 +304,7 @@ public abstract class AbstractClient implements Client
 		}
 		
 		durationSend = System.nanoTime() - startTime;
+		sendIndex++;
 	}
 	
 	private boolean tryPut( RemoteMethodCall call, ByteBuffer dest )
@@ -553,6 +555,12 @@ public abstract class AbstractClient implements Client
 	public void removeState( int x )
 	{
 		states &= ~x;
+	}
+	
+	@Override
+	public int getSendIndex()
+	{
+		return sendIndex;
 	}
 
 }
